@@ -13,6 +13,8 @@
   program is run).
 """
 
+import os
+import sys
 import config    # Configure from .ini files and command line
 import logging   # Better than print statements
 logging.basicConfig(format='%(levelname)s:%(message)s',
@@ -91,12 +93,29 @@ def respond(sock):
 
     parts = request.split()
     if len(parts) > 1 and parts[0] == "GET":
+
         transmit(STATUS_OK, sock)
-        transmit(CAT, sock)
+
+        data = ""
+        html_file = open("../pages/trivia.html", "r")
+        for line in html_file:
+            data += line
+        transmit(data, sock)
+
+        transmit(STATUS_OK, sock)
+
+        data = ""
+        css_file = open("../pages/trivia.css", "r")
+        for line in css_file:
+            data += line
+        transmit(data, sock)
+
+
     else:
         log.info("Unhandled request: {}".format(request))
         transmit(STATUS_NOT_IMPLEMENTED, sock)
         transmit("\nI don't handle this request: {}\n".format(request), sock)
+
 
     sock.shutdown(socket.SHUT_RDWR)
     sock.close()
@@ -136,6 +155,13 @@ def get_options():
 
 
 def main():
+
+    ##
+
+    for filename in os.listdir('.././pages'):
+        print(filename)
+
+    ##
     options = get_options()
     port = options.PORT
     if options.DEBUG:
@@ -144,6 +170,21 @@ def main():
     log.info("Listening on port {}".format(port))
     log.info("Socket is {}".format(sock))
     serve(sock, respond)
+
+
+
+
+def url_check(file_url):
+
+    illegal = ["~", "//", ".."]
+
+    if not file_url[0] in illegal:
+        if not file_url[0:1] in illegal:
+            return True
+
+    print(STATUS_FORBIDDEN)
+    return False
+
 
 
 if __name__ == "__main__":
